@@ -2,7 +2,7 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
-      <module fileurl="file://$PROJECT_DIR$/.idea/drop-spot.iml" filepath="$PROJECT_DIR$/.idea/drop-spot.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/drop_spot.iml" filepath="$PROJECT_DIR$/.idea/drop_spot.iml" />
     </modules>
   </component>
 </project>

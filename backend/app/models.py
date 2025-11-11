@@ -12,7 +12,6 @@ class User(UserBase, table=True):
     id : int| None = Field(default=None, primary_key=True)
     hashed_password : str = Field(nullable=False)
     role : str = Field(nullable=False,default='user')
-    created_at: datetime = Field(default_factory=datetime.utcnow)
 
     waitlist_entries : list["WaitList"] = Relationship(back_populates="user")
     claims : list["Claim"] = Relationship(back_populates="user")

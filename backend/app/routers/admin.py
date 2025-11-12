@@ -41,6 +41,7 @@ async def create_drop(drop: schemas.DropCreate,
             image_url=drop.image_url,
             claim_window_start=drop.claim_window_start,
             claim_window_end=drop.claim_window_end,
+            is_active=drop.is_active,
 
     )
     session.add(db_drop)
@@ -78,6 +79,8 @@ async def update_drop(drop_id : int,
 
     if drop_update.claim_window_end is not None:
         db_drop.claim_window_end = drop_update.claim_window_end
+    if drop_update.is_active is not None:
+        db_drop.is_active = drop_update.is_active
 
     session.add(db_drop)
     session.commit()
@@ -98,5 +101,4 @@ async def delete_drop(drop_id: int,
 
     session.delete(db_drop)
     session.commit()
-
     return {"message": "Drop deleted successfully."}

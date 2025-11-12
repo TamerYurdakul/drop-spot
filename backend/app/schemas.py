@@ -27,25 +27,36 @@ class DropBase(SQLModel):
     claim_window_start : datetime | None = None
     claim_window_end : datetime | None = None
 
+
 class DropCreate(DropBase):
     total_stock : int
-
+    is_active: bool = False
 class DropPublic(DropBase):
-    id : int
+    id: int
     total_stock : int
     created_at: datetime
+    is_active: bool
 
 # Waitlist dtoları
+
 class WaitListBase(SQLModel):
     drop_id : int
-    joined_at: datetime
+    join_date: datetime
     priority_score : float
+
+
+class WaitListPublic(SQLModel):
+    user_id: int
+    drop_id: int
+    join_date: datetime
+    priority_score: float
 
 #Claim dto
 class ClaimPublic(SQLModel):
     claim_code : str
     claimed_at: datetime
     drop_id : int
+    user_id: int
 
 class Token(SQLModel):
     access_token: str

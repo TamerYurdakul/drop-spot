@@ -16,8 +16,13 @@ def create_db():
 
 def get_session():
     with Session(engine) as session:
-
+        try:
             yield session
+        except Exception:
+            session.rollback()
+            raise
+        finally:
+            session.close()
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):

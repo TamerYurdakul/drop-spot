@@ -11,7 +11,7 @@ from .schemas import UserBase , DropBase
 class User(UserBase, table=True):
     id : int| None = Field(default=None, primary_key=True)
     hashed_password : str = Field(nullable=False)
-    role : str = Field(nullable=False,default='user')
+    role : str = Field(nullable=False,default='admin')
     created_at: datetime = Field(default_factory=datetime.utcnow)
 
     waitlist_entries : list["WaitList"] = Relationship(back_populates="user")
@@ -20,6 +20,7 @@ class User(UserBase, table=True):
 class Drop(DropBase, table=True):
     id : int | None = Field(default=None, primary_key=True)
     total_stock : int = Field(nullable=False,default=1)
+    created_at: datetime = Field(default_factory=datetime.utcnow)
 
     waitlist_entries : list["WaitList"] = Relationship(back_populates="drop")
     claims : list["Claim"] = Relationship(back_populates="drop")
@@ -38,7 +39,7 @@ class Claim(SQLModel, table=True):
     id : int|None = Field(default=None, primary_key=True)
     user_id : int = Field(foreign_key="user.id", nullable=False)
     drop_id : int = Field(foreign_key="drop.id", nullable=False)
-    claimed_code: str = Field(unique=True)
+    claim_code: str = Field(unique=True)
     claimed_at : datetime = Field(default_factory=datetime.utcnow)
 
     user: User = Relationship(back_populates="claims")

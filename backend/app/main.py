@@ -2,11 +2,12 @@ from fastapi import FastAPI
 from contextlib import contextmanager
 
 from database import create_db, lifespan
-from routers import auth
+from routers import auth, admin
 
 app = FastAPI(lifespan=lifespan)
 
 app.include_router(auth.router)
+app.include_router(admin.router)
 
 @app.get("/")
 async def root():

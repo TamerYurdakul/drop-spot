@@ -1,8 +1,8 @@
 from fastapi import FastAPI
 from contextlib import contextmanager
 
-from database import create_db, lifespan
-from routers import auth, admin, drops
+from backend.app.database import create_db, lifespan
+from backend.app.routers import auth, admin, drops
 
 app = FastAPI(lifespan=lifespan)
 

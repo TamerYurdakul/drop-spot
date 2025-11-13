@@ -50,6 +50,7 @@ class WaitListPublic(SQLModel):
     drop_id: int
     join_date: datetime
     priority_score: float
+    is_active: bool
 
 #Claim dto
 class ClaimPublic(SQLModel):

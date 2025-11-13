@@ -32,6 +32,7 @@ class WaitList(SQLModel, table=True):
     drop_id : int = Field(foreign_key="drop.id", primary_key=True, ondelete="CASCADE")
     join_date : datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     priority_score : float = Field(nullable=False)
+    is_active : bool = Field(default=True, nullable=False)
 
     user : User = Relationship(back_populates="waitlist_entries")
     drop : Drop = Relationship(back_populates="waitlist_entries")

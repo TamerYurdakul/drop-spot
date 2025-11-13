@@ -2,13 +2,13 @@ from fastapi import APIRouter, Depends, HTTPException, status, Request, Response
 from sqlmodel import select, Session, select, delete
 from typing import List, Annotated
 from fastapi.responses import JSONResponse
-import datetime
+from datetime import datetime, timezone
 
 from backend.app import database, schemas
 from backend.app import models
 from backend.app.database import get_session
 from backend.app.utils import security
-from schemas import WaitListBase
+from backend.app.schemas import WaitListBase
 
 router = APIRouter(
     prefix="/admin",

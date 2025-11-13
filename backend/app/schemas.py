@@ -24,8 +24,9 @@ class DropBase(SQLModel):
     name : str = Field(index=True)
     description : str | None = None
     image_url : str | None = None
-    claim_window_start : datetime | None = None
-    claim_window_end : datetime | None = None
+    # Waitlist tarihleri - waitlist bitince claim otomatik açılır
+    waitlist_window_start : datetime | None = None
+    waitlist_window_end : datetime | None = None
 
 
 class DropCreate(DropBase):

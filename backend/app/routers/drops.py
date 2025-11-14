@@ -38,17 +38,38 @@ async def join_waitlist(
         raise HTTPException(status_code=404, detail="Drop not found")
     if not drop.is_active:
         raise HTTPException(status_code=400, detail="Drop is not active")
+    
+ 
+    now = datetime.now(timezone.utc)
+    if drop.waitlist_window_start and drop.waitlist_window_end:
+        wl_start = drop.waitlist_window_start
+        wl_end = drop.waitlist_window_end
+        
+        if wl_start.tzinfo is None:
+            wl_start = wl_start.replace(tzinfo=timezone.utc)
+        if wl_end.tzinfo is None:
+            wl_end = wl_end.replace(tzinfo=timezone.utc)
+        
+        if now < wl_start:
+            raise HTTPException(
+                status_code=403,
+                detail=f"Waitlist has not started yet. Opens at {wl_start.isoformat()}"
+            )
+        
+        if now > wl_end:
+            raise HTTPException(
+                status_code=403,
+                detail="Waitlist has closed. You cannot join anymore."
+            )
 
-    # Kullanıcının daha önce bu drop'a katılıp katılmadığını kontrol et
     existing_waitlist = session.get(models.WaitList, (current_user.id, drop_id))
     
     if existing_waitlist is not None:
-        # Eğer kayıt varsa ve aktifse, mevcut kaydı döndür
+
         if existing_waitlist.is_active:
             return existing_waitlist
         
-        # Eğer kayıt varsa ama deaktif ise (leave yapmış), reaktive et
-        # Priority score değişmez, idempotency sağlanır
+
         existing_waitlist.is_active = True
         existing_waitlist.join_date = datetime.now(timezone.utc)
         session.add(existing_waitlist)
@@ -73,7 +94,6 @@ async def join_waitlist(
 
     acount_age_days = max((now - user_created_at).days, 0)
 
-    # Sadece aktif waitlist kayıtlarını say (soft delete için)
     rapid_actions = session.scalar(
         select(func.count(models.WaitList.drop_id)).where(
             models.WaitList.user_id == current_user.id,
@@ -124,8 +144,7 @@ async def leave_waitlist(
     if waitlist_entry is None or not waitlist_entry.is_active:
         return {"message": "You were not on the waitlist"}
 
-    # Kaydı silmek yerine deaktive et (soft delete)
-    # Bu sayede priority score korunur ve idempotency sağlanır
+
     waitlist_entry.is_active = False
     session.add(waitlist_entry)
     session.commit()
@@ -145,21 +164,19 @@ async def claim_drop(
 
 
     now = datetime.now(timezone.utc)
-    if drop.claim_window_start is None or drop.claim_window_end is None:
-        raise HTTPException(status_code=400, detail="Claim window not set")
+    if drop.waitlist_window_end is None:
+        raise HTTPException(status_code=400, detail="Waitlist window not set")
     
-
-    claim_start = drop.claim_window_start
-    claim_end = drop.claim_window_end
-
-    if claim_start.tzinfo is None:
-        claim_start = claim_start.replace(tzinfo=timezone.utc)
-
-    if claim_end.tzinfo is None:
-        claim_end = claim_end.replace(tzinfo=timezone.utc)
+    wl_end = drop.waitlist_window_end
+    if wl_end.tzinfo is None:
+        wl_end = wl_end.replace(tzinfo=timezone.utc)
     
-    if not (claim_start <= now <= claim_end):
-        raise HTTPException(status_code=403, detail="Claim window is not open")
+    # Waitlist henüz bitmedi mi?
+    if now <= wl_end:
+        raise HTTPException(
+            status_code=403,
+            detail=f"Claim will open after waitlist ends at {wl_end.isoformat()}"
+        )
 
     waitlist_entry = session.get(models.WaitList, (current_user.id, drop_id))
     if waitlist_entry is None or not waitlist_entry.is_active:
@@ -203,7 +220,6 @@ async def claim_drop(
 
     claim_code = f"DROP-{drop_id}-{current_user.id}-{uuid.uuid4().hex[:8].upper()}"
 
-    # 7. Claim kaydı oluşturma
     new_claim = models.Claim(
         user_id=current_user.id,
         drop_id=drop_id,

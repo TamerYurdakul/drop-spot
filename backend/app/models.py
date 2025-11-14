@@ -2,7 +2,7 @@ from datetime import datetime, timezone
 
 from sqlalchemy import Nullable
 from sqlmodel import SQLModel, Table, Column, create_engine, Field, Relationship ,UniqueConstraint
-from .schemas import UserBase , DropBase
+from schemas import UserBase, DropBase
 
 
 #User = id , email , password(hashed yada normal) ,role created_at

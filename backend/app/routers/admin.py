@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, status, Request, Response
 from sqlmodel import select, Session, select, delete
 from typing import List, Annotated
 from fastapi.responses import JSONResponse
-from datetime import datetime, timezone
+import datetime
 
 from backend.app import database, schemas
 from backend.app import models
@@ -26,6 +26,20 @@ async def list_drops(session: SessionDep,
     db_drops = session.exec(select(models.Drop)).all()
     return db_drops
 
+@router.get("/drops/{drop_id}", response_model=schemas.DropPublic)
+async def get_drop(drop_id: int,
+                   session: SessionDep,
+                   current_user: models.User = Depends(security.get_current_user)):
+    
+    if current_user.role != "admin":
+        raise HTTPException(status_code=403, detail="You are not allowed to perform this action.")
+    
+    db_drop = session.get(models.Drop, drop_id)
+    if db_drop is None:
+        raise HTTPException(status_code=404, detail="Drop not found.")
+    
+    return db_drop
+
 @router.post("/drops", response_model=models.Drop)
 async def create_drop(drop: schemas.DropCreate,
                       session: SessionDep,
@@ -39,8 +53,8 @@ async def create_drop(drop: schemas.DropCreate,
             total_stock=drop.total_stock,
             description=drop.description,
             image_url=drop.image_url,
-            claim_window_start=drop.claim_window_start,
-            claim_window_end=drop.claim_window_end,
+            waitlist_window_start=drop.waitlist_window_start,
+            waitlist_window_end=drop.waitlist_window_end,
             is_active=drop.is_active,
 
     )
@@ -74,11 +88,12 @@ async def update_drop(drop_id : int,
     if drop_update.total_stock is not None:
         db_drop.total_stock = drop_update.total_stock
 
-    if drop_update.claim_window_start is not None:
-        db_drop.claim_window_start = drop_update.claim_window_start
+    if drop_update.waitlist_window_start is not None:
+        db_drop.waitlist_window_start = drop_update.waitlist_window_start
 
-    if drop_update.claim_window_end is not None:
-        db_drop.claim_window_end = drop_update.claim_window_end
+    if drop_update.waitlist_window_end is not None:
+        db_drop.waitlist_window_end = drop_update.waitlist_window_end
+        
     if drop_update.is_active is not None:
         db_drop.is_active = drop_update.is_active
 

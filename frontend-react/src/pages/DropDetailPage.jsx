@@ -14,22 +14,15 @@ const DropDetailPage = () => {
     const [claimCode, setClaimCode] = useState(null);
 
     useEffect(() => {
+        // State'leri temizle (yeni drop'a geçerken)
+        setWaitlistData(null);
+        setClaimCode(null);
+        setLoading(true);
+        
+        // Backend'den veri yükle
         loadDropDetail();
         
-        const savedWaitlistData = localStorage.getItem(`waitlist_${id}`);
-        if (savedWaitlistData) {
-            try {
-                setWaitlistData(JSON.parse(savedWaitlistData));
-            } catch (e) {
-                console.error('Error parsing saved waitlist data:', e);
-            }
-        }
-        
-        const savedClaimCode = localStorage.getItem(`claim_${id}`);
-        if (savedClaimCode) {
-            setClaimCode(savedClaimCode);
-        }
-        
+        // 10 saniyede bir güncelle
         const interval = setInterval(loadDropDetail, 10000);
         return () => clearInterval(interval);
     }, [id]);
@@ -46,12 +39,42 @@ const DropDetailPage = () => {
             
             setDrop(foundDrop);
             
+            // Waitlist verisi sync'i
             if (foundDrop.waitlist_data) {
+                // Backend'de veri var - kullan ve localStorage'a kaydet
                 setWaitlistData(foundDrop.waitlist_data);
+                localStorage.setItem(`waitlist_${id}`, JSON.stringify(foundDrop.waitlist_data));
+            } else {
+                // Backend'de veri yok - localStorage'ı kontrol et
+                const savedWaitlistData = localStorage.getItem(`waitlist_${id}`);
+                if (savedWaitlistData) {
+                    try {
+                        const parsedData = JSON.parse(savedWaitlistData);
+                        // Backend'de veri yoksa localStorage eski/geçersiz demektir
+                        // Ama kullanıcı join yapmış olabilir, onun için bir süre tut
+                        // NOT: Backend veri döndürmüyorsa null olması gerek
+                        setWaitlistData(parsedData);
+                    } catch (e) {
+                        localStorage.removeItem(`waitlist_${id}`);
+                        setWaitlistData(null);
+                    }
+                } else {
+                    setWaitlistData(null);
+                }
             }
             
+            // Claim verisi sync'i
+            // NOT: Backend şu anda user_claim döndürmüyor (GET /drops endpoint'i sadece drop listesi döndürüyor)
+            // Bu yüzden localStorage'dan okuyoruz, ama bu geçici bir çözüm
+            // İdeal: Backend'den kullanıcıya özel claim bilgisi gelmeli
             if (foundDrop.user_claim) {
+                // Backend'de claim var - kullan ve localStorage'a kaydet
                 setClaimCode(foundDrop.user_claim.claim_code);
+                localStorage.setItem(`claim_${id}`, foundDrop.user_claim.claim_code);
+            } else {
+                // Backend'den claim bilgisi gelmiyor, localStorage'dan oku
+                const savedClaimCode = localStorage.getItem(`claim_${id}`);
+                setClaimCode(savedClaimCode || null);
             }
         } catch (error) {
             console.error('Error loading drop:', error);
@@ -66,15 +89,22 @@ const DropDetailPage = () => {
         
         try {
             const response = await ApiService.joinWaitlist(id);
-            setWaitlistData(response.data);
             
-            localStorage.setItem(`waitlist_${id}`, JSON.stringify(response.data));
+            // Backend'den dönen waitlist verisini kaydet
+            const waitlistDataFromBackend = response.data;
+            setWaitlistData(waitlistDataFromBackend);
+            localStorage.setItem(`waitlist_${id}`, JSON.stringify(waitlistDataFromBackend));
             
-            const positionText = response.data.current_position ? `Sıranız: ${response.data.current_position}` : '';
+            const positionText = waitlistDataFromBackend.current_position 
+                ? `Sıranız: ${waitlistDataFromBackend.current_position}` 
+                : '';
+            
             setMessage({ 
                 text: `Waitlist'e başarıyla katıldınız!${positionText ? ' ' + positionText : ''}`, 
                 type: 'success' 
             });
+            
+            // Backend'den güncel veriyi çek
             await loadDropDetail();
         } catch (error) {
             setMessage({ 
@@ -94,14 +124,17 @@ const DropDetailPage = () => {
         
         try {
             await ApiService.leaveWaitlist(id);
-            setWaitlistData(null);
             
+            // State ve localStorage'ı temizle
+            setWaitlistData(null);
             localStorage.removeItem(`waitlist_${id}`);
             
             setMessage({ 
                 text: 'Waitlist\'ten başarıyla ayrıldınız', 
                 type: 'success' 
             });
+            
+            // Backend'den güncel veriyi çek
             await loadDropDetail();
         } catch (error) {
             setMessage({ 
@@ -119,17 +152,21 @@ const DropDetailPage = () => {
         
         try {
             const response = await ApiService.claimDrop(id);
-            setClaimCode(response.data.claim_code);
             
-            localStorage.setItem(`claim_${id}`, response.data.claim_code);
+            // Backend'den dönen claim code'u kaydet
+            const claimCodeFromBackend = response.data.claim_code;
+            setClaimCode(claimCodeFromBackend);
+            localStorage.setItem(`claim_${id}`, claimCodeFromBackend);
             
             setMessage({ 
                 text: 'Claim başarılı! İşte kodunuz:', 
                 type: 'success' 
             });
+            
+            // Backend'den güncel veriyi çek
             await loadDropDetail();
             
-            // Scroll to claim code
+            // Scroll to claim code section
             setTimeout(() => {
                 document.getElementById('claim-code-section')?.scrollIntoView({ 
                     behavior: 'smooth' 

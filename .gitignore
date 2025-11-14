@@ -1,6 +1,44 @@
+# Virtual Environment
 .venv/
 backend/.venv/
+venv/
+env/
 
-
+# IDE
 .idea/
 *.iml
+.vscode/
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+*.egg-info/
+dist/
+build/
+
+# Database
+*.db
+*.sqlite
+*.sqlite3
+drop_spot.db
+backend/app/drop_spot.db
+
+# OS
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+*~
+
+# Node
+node_modules/
+.npm/
+*.log
+
+# Environment
+.env
+.env.local
+.env.*.local
